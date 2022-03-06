@@ -1,0 +1,112 @@
+---
+title: "Week 11"
+author: "Raj, Ponnam"
+date: March 05th, 2022
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+
+
+# a. Plot the data from each dataset using a scatter plot.
+
+```{r}
+library('ggplot2')
+library('class')
+
+# working directory path to access binary-classifier-data.CSV file from local drive
+setwd("/Users/rajponnam/Documents/ds_course/dsc520/data")
+
+# Read the files `binary-classifier-data.csv` and trinary-classifier-data.csv to `binary_df` and 'trinary_df'
+binary_df <- read.csv("binary-classifier-data.csv")
+trinary_df <- read.csv("trinary-classifier-data.csv")
+
+temp_binary_df <- binary_df
+temp_binary_df$label <- as.factor(temp_binary_df$label)
+temp_trinary_df <- trinary_df
+temp_trinary_df$label <- as.factor(temp_trinary_df$label)
+
+# Plot the data dataset using a scatter plot for both files
+ggplot(temp_binary_df, aes(x=x, y=y, color=label)) + geom_point()
+ggplot(temp_trinary_df, aes(x=x, y=y, color=label)) + geom_point()
+
+```
+
+# b.In this problem, you will determine which points are nearest by calculating the Euclidean distance between two points.
+```{r}
+
+library ('TSdist')
+
+EuclideanDistance(binary_df$x,binary_df$y)
+
+EuclideanDistance(trinary_df$x,trinary_df$y)
+
+```
+# Fit a k nearest neighbors model for each dataset for k=3, k=5, k=10, k=15, k=20, and k=25. Compute the accuracy of the resulting models for each value of k. Plot the results in a graph where the x-axis is the different values of k and the y-axis is the accuracy of the model.
+
+knn for binary
+```{r}
+# Split data to use 80% of data to train the model and 20% of data to test the model
+data_split_binary <- sample(1:nrow(binary_df), 0.8 * nrow(binary_df))
+train_binary <- binary_df[data_split_binary,]
+test_binary <- binary_df[-data_split_binary,]
+
+binary_glm <- glm(label ~ x + y, data=binary_df, family = binomial)
+
+# extract 1st column of train dataset because it will be used as 'cl' argument in knn function.
+target_category <- binary_df[data_split_binary,1]
+
+# extract 1st column if test dataset to measure the accuracy
+test_category <- binary_df[-data_split_binary,1]
+
+k_values<- c(3, 5, 10, 15, 20, 25)
+Accuracy <- NULL
+for (i in 1:length(k_values))
+{
+  test_pred <- knn(train_binary,test_binary,cl=target_category,k=k_values[i])
+  confmatrix <- table(test_category,test_pred)
+  accuracy <- (confmatrix[[1,1]] + confmatrix[[2,2]]) / sum(confmatrix)
+  Accuracy <- c(Accuracy, round((accuracy * 100), digits=2))
+}
+binary_results_df <- data.frame(k_values, Accuracy)
+binary_results_df
+ggplot(binary_results_df, aes(x=k_values, y=Accuracy)) + geom_point() + geom_line(colour="red")
+
+```
+knn for trinary 
+```{r}
+# Split data to use 80% of data to train the model and 20% of data to test the model
+data_split_trinary <- sample(1:nrow(trinary_df), 0.8 * nrow(trinary_df))
+train_trinary <- trinary_df[data_split_trinary,]
+test_trinary <- trinary_df[-data_split_trinary,]
+
+trinary_glm <- glm(label ~ x + y, data=trinary_df, family = poisson)
+
+# extract 1st column of train dataset because it will be used as 'cl' argument in knn function.
+target_category <- trinary_df[data_split_trinary,1]
+
+# extract 1st column if test dataset to measure the accuracy
+test_category <- trinary_df[-data_split_trinary,1]
+
+k_values<- c(3, 5, 10, 15, 20, 25)
+Accuracy <- NULL
+for (i in 1:length(k_values))
+{
+  test_pred <- knn(train_trinary,test_trinary,cl=target_category,k=k_values[i])
+  confmatrix <- table(test_category,test_pred)
+  accuracy <- (confmatrix[[1,1]] + confmatrix[[2,2]]) / sum(confmatrix)
+  Accuracy <- c(Accuracy, round((accuracy * 100), digits=2))
+}
+trinary_results_df <- data.frame(k_values, Accuracy)
+trinary_results_df
+ggplot(trinary_results_df, aes(x=k_values, y=Accuracy)) + geom_point() + geom_line(colour="red")
+
+```
+
+
+# C. Looking back at the plots of the data, do you think a linear classifier would work well on these datasets?
+Linear classifier will not work for both binary and trinary datasets because data points are not grouped around a line. Data points are spread all over the graph.  

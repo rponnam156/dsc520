@@ -1,0 +1,64 @@
+---
+title: "Week 11"
+author: "Raj, Ponnam"
+date: March 5th, 2022
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+# a. Plot the dataset using a scatter plot.
+```{r}
+
+# working directory path to access binary-classifier-data.CSV file from local drive
+setwd("/Users/rajponnam/Documents/ds_course/dsc520/data")
+
+# Read the files `clustering-data.csv` 
+cluster_df <- read.csv("clustering-data.csv")
+
+library('ggplot2')
+ggplot(cluster_df, aes(x=x, y=y)) + geom_point()
+
+```
+# b. Fit the dataset using the k-means algorithm from k=2 to k=12. Create a scatter plot of the resultant clusters for each value of k.
+```{r}
+set.seed(20)
+total_withinss <- NULL
+avg_distance <- NULL
+for (n in 2:12)
+{
+  temp <- cluster_df
+  clusters <- kmeans(temp, n)
+  temp$cluster <- as.factor(clusters$cluster)
+  plot = ggplot(data=temp, aes(x=x, y=y, color = cluster)) + geom_point() + geom_point(data = as.data.frame(clusters$centers), color = "black", size = 2) + ggtitle(paste("K-Means Plot for k =", n))
+  print(plot)
+  
+  # Needed for later part of the assignment
+  x_distance <- clusters$centers[temp$cluster] - temp$x
+  y_distance <- clusters$centers[temp$cluster] - temp$y
+  tot_distance <- sqrt((x_distance ** 2) + (y_distance ** 2))
+  avg_distance <- c(avg_distance, mean(tot_distance))
+  total_withinss <- c(total_withinss, clusters$tot.withinss)
+}
+```
+
+# c. As k-means is an unsupervised algorithm, you cannot compute the accuracy as there are no correct values to compare the output to. Instead, you will use the average distance from the center of each cluster as a measure of how well the model fits the data. To calculate this metric, simply compute the distance of each data point to the center of the cluster it is assigned to and take the average value of all of those distances.
+
+# Calculate this average distance from the center of each cluster for each value of k and plot it as a line chart where k is the x-axis and the average distance is the y-axis.
+
+# One way of determining the “right” number of clusters is to look at the graph of k versus average distance and finding the “elbow point”. Looking at the graph you generated in the previous example, what is the elbow point for this dataset?
+
+```{r}
+k_values <- c(2:12)
+distance_df <- data.frame(k_values, avg_distance)
+distance_df
+ggplot(data = distance_df, aes(x=k_values, y=avg_distance)) + xlab("Number of clusters (K)") + ylab("Average Distance") +  geom_point() + geom_line(color = "blue")
+withinss_df <- data.frame(k_values, total_withinss)
+withinss_df
+ggplot(data = withinss_df, aes(x=k_values, y=total_withinss)) + xlab("Number of clusters (K)") + ylab("Total within-clusters sum of squares") + geom_point() + geom_line(color = "blue")
+
+```
+
+Based on the above plots, the elbow point is 7.
